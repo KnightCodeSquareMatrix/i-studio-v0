@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.playwright/
+tests/.artifacts/
+
+# Local credentials and machine output
+.env
+.env.*
+!.env.example
+.vercel/
+*.log

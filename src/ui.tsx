@@ -1,0 +1,22 @@
+import { useRef, useState } from 'react';
+import { Button } from '@/components/base/buttons/button';
+import { Select } from '@/components/base/select/select';
+import { ModalOverlay, Modal, Dialog, Heading } from 'react-aria-components';
+import { X, CornerUpLeft, CornerUpRight, Trash01 } from '@untitledui/icons';
+export function Choice({ label, value, options, onChange, ...props }: any) {
+  return <Select label={label} aria-label={label} size="sm" selectedKey={String(value)} onSelectionChange={key => key !== null && onChange(String(key))} {...props}>{options.map((option: any) => <Select.Item key={String(option.value ?? option)} id={String(option.value ?? option)}>{option.label ?? option}</Select.Item>)}</Select>;
+}
+export function IconButton({ label, icon: Icon, onPress, active, ...props }: any) { return <Button aria-label={label} title={label} color="tertiary" size="sm" iconLeading={Icon} onPress={onPress} className={active ? 'icon-active' : ''} {...props} />; }
+export function Overlay({ title, children, onClose, wide = false, footer }: any) {
+  return <ModalOverlay isOpen onOpenChange={open => !open && onClose()} isDismissable className="modal-overlay"><Modal className={`modal ${wide ? 'modal-wide' : ''}`}><Dialog className="dialog"><div className="dialog-header"><Heading slot="title">{title}</Heading><IconButton label="关闭弹窗" icon={X} onPress={onClose} /></div><div className="dialog-body">{children}</div>{footer && <div className="dialog-footer">{footer}</div>}</Dialog></Modal></ModalOverlay>;
+}
+export function EmptyState({ icon: Icon, title, text, children }: any) { return <div className="empty-state"><span className="empty-icon"><Icon aria-hidden="true" /></span><h3>{title}</h3><p>{text}</p>{children}</div>; }
+export function Art({ item, compact = false }: any) {
+  return <div className={`art art-${(item.variant || 0) % 6} ${compact ? 'art-compact' : ''} ${item.kind === 'svg' ? 'art-vector' : ''}`}><img src={item.image} alt={item.title} loading="lazy" draggable={false} />{!compact && item.kind !== 'svg' && <div className="art-caption"><span>{['AMBER / 01', 'THE EVERYDAY RITUAL', 'NATURALLY REFINED', 'A MOMENT OF CALM', 'LESS, BUT BETTER.', 'THE ESSENTIALS'][(item.variant || 0) % 6]}</span><strong>{['让气息，慢下来', '把日常留给喜欢', '细节，自有光芒', '为生活留一点空白', '恰到好处的温柔', '纯粹的，从容的'][(item.variant || 0) % 6]}</strong></div>}</div>;
+}
+export function MarkupCanvas({ image, strokes, onChange, mode = 'markup' }: any) {
+  const surface = useRef<SVGSVGElement>(null); const current = useRef<number[][] | null>(null); const [drawing, setDrawing] = useState<number[][]>([]); const [redos, setRedos] = useState<any[]>([]);
+  const point = (event: any) => { const box = surface.current!.getBoundingClientRect(); return [Math.max(0, Math.min(1000, (event.clientX - box.left) / box.width * 1000)), Math.max(0, Math.min(1000, (event.clientY - box.top) / box.height * 1000))]; };
+  const finish = () => { if (current.current?.length) { onChange([...strokes, current.current]); setRedos([]); } current.current = null; setDrawing([]); };
+  return <div className="markup-editor"><div className="markup-surface"><img src={image} alt="待编辑的原图" /><svg ref={surface} viewBox="0 0 1000 1000" preserveAspectRatio="none" role="img" aria-label="绘制修改区域" onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); current.current = [point(e)]; setDrawing([...current.current]); }} onPointerMove={e => { if (current.current) { current.current.push(point(e)); setDrawing([...current.current]); } }} onPointerUp={finish} onPointerCancel={finish}>{[...strokes, drawing].map((stroke: number[][], i: number) => <polyline key={i} points={stroke.map(p => p.join(',')).join(' ')} fill="none" stroke={mode === 'mask' ? '#9e77ed' : '#f04438'} strokeOpacity={mode === 'mask' ? .5 : .9} strokeWidth={mode === 'mask' ? 65 : 10} strokeLinecap="round" strokeLinejoin="round" />)}</svg></div><div className="inline-actions"><IconButton label="撤销笔迹" icon={CornerUpLeft} isDisabled={!strokes.length} onPress={() => { setRedos([...redos, strokes.at(-1)]); onChange(strokes.slice(0, -1)); }} /><IconButton label="重做笔迹" icon={CornerUpRight} isDisabled={!redos.length} onPress={() => { onChange([...strokes, redos.at(-1)]); setRedos(redos.slice(0, -1)); }} /><IconButton label="清空笔迹" icon={Trash01} onPress={() => { onChange([]); setRedos([]); }} /><Button color="secondary" size="sm" onPress={() => onChange([...strokes, [[220, 300], [780, 300], [780, 700], [220, 700], [220, 300]]])}>标记中心区域</Button></div><p className="muted small">涂画或使用“标记中心区域”，修改范围随草稿保存。</p></div>;
+}
